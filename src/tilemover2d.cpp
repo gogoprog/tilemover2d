@@ -5,15 +5,45 @@
 namespace tilemover2d
 {
 
+//
+// Path
+//
+
 void Path::debugPrint() const
 {
-    for(int i=0; i<points.size(); i++)
+    for(int i=0; i<positions.size(); i++)
     {
-        const Point & p = points[i];
+        const Position & p = positions[i];
 
-        printf("(%d, %d)\n", p.x, p.y);
+        printf("(%.2f, %.2f)\n", p.x, p.y);
     }
 }
+
+//
+// Agent
+//
+
+Agent::Agent()
+    :
+    speed(1.0f)
+{
+
+}
+
+void Agent::moveTo(const Position & target_position)
+{
+    if(world->findPath(path, position, target_position))
+    {
+        MP_VECTOR<Position> & positions = path.positions;
+        state = State::ACTIVE;
+        positions[0] = position;
+        positions[positions.size() - 1] = target_position;
+    }
+}
+
+//
+// World
+//
 
 World::World()
     :
@@ -22,13 +52,20 @@ World::World()
 
 }
 
-void World::init(const int _width, const int _height)
+void World::init(const int _width, const int _height, const float tile_width, const float tile_height)
 {
     width = _width;
     height = _height;
+    tileWidth = tile_width;
+    tileHeight = tile_height;
 
     tiles = new Tile[width * height];
     memset(tiles, 0, sizeof(Tile) * width * height);
+}
+
+void World::setTileBlocking(const int x, const int y, const bool blocking)
+{
+    getTile(x, y).blocking = blocking;
 }
 
 const Tile & World::getTile(const int x, const int y) const
@@ -36,22 +73,47 @@ const Tile & World::getTile(const int x, const int y) const
     return tiles[y*width + x];
 }
 
-void World::solve(const Point & from, const Point & to)
+Tile & World::getTile(const int x, const int y)
 {
-    float cost = 0;
-    Path path;
+    return tiles[y*width + x];
+}
 
-    int result = pather.Solve(pointToNode(from), pointToNode(to), &lastComputedPath, &cost);
+bool World::findPath(Path & path, const Position & from, const Position & to)
+{
+    Point a, b;
+    positionToPoint(a, from);
+    positionToPoint(b, to);
 
-    path.points.resize(lastComputedPath.size());
+    return findPath(path, a, b);
+}
+
+bool World::findPath(Path & path, const Point & from, const Point & to)
+{
+    Point point;
+    path.cost = 0;
+    int result = pather.Solve(pointToNode(from), pointToNode(to), &lastComputedPath, &path.cost);
+
+    path.positions.resize(lastComputedPath.size());
     for(int i=0; i<lastComputedPath.size(); i++)
     {
-        nodeToPoint(lastComputedPath[i], path.points[i]);
+        nodeToPoint(lastComputedPath[i],point);
+
+        pointToPosition(path.positions[i], point);
     }
 
-    path.cost = cost;
-
     path.debugPrint();
+
+    return result == micropather::MicroPather::SOLVED;
+}
+
+Agent & World::createAgent(const Position & position)
+{
+    Agent & agent = * new Agent();
+
+    agent.position = position;
+    agent.state = Agent::State::IDLE;
+
+    return agent;
 }
 
 float World::LeastCostEstimate(void* stateStart, void* stateEnd)
@@ -103,6 +165,17 @@ void World::nodeToPoint(void* node, Point & p)
 void *World::pointToNode(const Point & p)
 {
     return (void*) (p.y*width + p.x);
+}
+
+void World::pointToPosition(Position & position, const Point & point)
+{
+    position.x = point.x * tileWidth + tileWidth * 0.5f;
+    position.y = point.y * tileHeight + tileHeight * 0.5f;
+}
+
+void World::positionToPoint(Point & point, const Position & position)
+{
+
 }
 
 }
