@@ -8,8 +8,8 @@ using namespace tilemover2d;
 const float
     tileSize(32.0f);
 const int
-    width(32),
-    height(32);
+    xTileCount(32),
+    yTileCount(32);
 GLUquadricObj
     * disk;
 World
@@ -19,13 +19,15 @@ Path
 MP_VECTOR<Agent *>
     agents;
 int
-    previousTime(0);
+    previousTime(0),
+    windowWidth,
+    windowHeight;
 
 int mainTest()
 {
     cout << "Initializing world" << endl;
 
-    world.init(width, height, tileSize, tileSize);
+    world.init(xTileCount, yTileCount, tileSize, tileSize);
 
     cout << "Finding a path" << endl;
 
@@ -47,19 +49,19 @@ void drawGrid()
 {
     glColor3f(0.5f, 0.5f, 0.5f);
 
-    for(int i=0; i<width; i++)
+    for(int i=0; i<xTileCount; i++)
     {
         glBegin(GL_LINES);
-        glVertex2f(i * tileSize, height * tileSize);
-        glVertex2f(i * tileSize, -height * tileSize);
+        glVertex2f(i * tileSize, yTileCount * tileSize);
+        glVertex2f(i * tileSize, -yTileCount * tileSize);
         glEnd();
     }
 
-    for(int i=0; i<height; i++)
+    for(int i=0; i<yTileCount; i++)
     {
         glBegin(GL_LINES);
-        glVertex2f(-width * tileSize, i * tileSize);
-        glVertex2f(width * tileSize, i * tileSize);
+        glVertex2f(-xTileCount * tileSize, i * tileSize);
+        glVertex2f(xTileCount * tileSize, i * tileSize);
         glEnd();
     }
 }
@@ -125,6 +127,24 @@ void mainLoop(void)
     glutPostRedisplay();
 }
 
+void onMouseEvent(int button, int state, int x, int y)
+{
+    cout << x << " " << y << endl;
+}
+
+void reshape(int window_width, int window_height)
+{
+    glMatrixMode(GL_PROJECTION);
+    glLoadIdentity();
+    glViewport(0, 0, window_width, window_height);
+    gluOrtho2D(-xTileCount * tileSize * 0.5f, xTileCount * tileSize * 0.5, - yTileCount * tileSize * 0.5, yTileCount * tileSize * 0.5);
+    glTranslatef(-xTileCount * tileSize * 0.5f, -yTileCount * tileSize * 0.5f, 0.0f);
+    glMatrixMode(GL_MODELVIEW);
+
+    windowWidth = window_width;
+    windowHeight = window_height;
+}
+
 int main(int argc, char **argv)
 {
     cout << "tilemover2d test application" << endl;
@@ -136,9 +156,8 @@ int main(int argc, char **argv)
     glutInitWindowSize(512, 512);
     glutCreateWindow("tilemover2d - test");
     glutDisplayFunc(mainLoop);
-
-    gluOrtho2D(- width * tileSize * 0.5f, width * tileSize * 0.5, - height * tileSize * 0.5, height * tileSize * 0.5);
-    glTranslatef(-width * tileSize * 0.5f, -height * tileSize * 0.5f, 0.0f);
+    glutMouseFunc(onMouseEvent);
+    glutReshapeFunc(reshape);
 
     disk = gluNewQuadric();
 
