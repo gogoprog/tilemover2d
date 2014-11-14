@@ -1,4 +1,4 @@
 *.make
 Makefile
 obj/
-build/test
+build/tilemover2d-test

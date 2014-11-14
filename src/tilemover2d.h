@@ -34,12 +34,12 @@ namespace tilemover2d
 
     struct Path
     {
+        void debugPrint() const;
+
         MP_VECTOR<Position>
             positions;
         float
             cost;
-
-        void debugPrint() const;
     };
 
     class World;
@@ -58,12 +58,15 @@ namespace tilemover2d
         Agent();
         State getState() const { return state; };
         const Path & getPath() const { return path; };
+        const Position & getPosition() const { return position; };
         void moveTo(const Position & position);
 
         float
-            speed;
-
+            speed,
+            radius;
     private:
+        void update(const float dt);
+
         Position
             position;
         State
@@ -72,6 +75,11 @@ namespace tilemover2d
             path;
         World
             * world;
+        float
+            currentTime,
+            currentDuration;
+        uint
+            currentTargetIndex;
     };
 
     class World : public micropather::Graph
@@ -81,16 +89,17 @@ namespace tilemover2d
         void init(const int width, const int height, const float tile_width, const float tile_height);
         void setTileBlocking(const int x, const int y, const bool blocking);
         const Tile & getTile(const int x, const int y) const;
-        Tile & getTile(const int x, const int y);
         bool findPath(Path & path, const Position & from, const Position & to);
         bool findPath(Path & path, const Point & from, const Point & to);
         Agent & createAgent(const Position & position);
         void update(const float dt);
 
     private:
-        virtual float LeastCostEstimate(void* stateStart, void* stateEnd);
-        virtual void AdjacentCost(void* state, MP_VECTOR< micropather::StateCost > *adjacent);
-        virtual void PrintStateInfo( void* state ) {}
+        virtual float LeastCostEstimate(void* stateStart, void* stateEnd) override;
+        virtual void AdjacentCost(void* state, MP_VECTOR< micropather::StateCost > *adjacent) override;
+        virtual void PrintStateInfo( void* state ) override {}
+
+        Tile & getTile(const int x, const int y);
         void nodeToPoint(void* node, Point & p);
         void *pointToNode(const Point & p);
         void pointToPosition(Position & position, const Point & point);
@@ -110,5 +119,7 @@ namespace tilemover2d
             lastComputedPath;
         MP_VECTOR< Agent *>
             agents;
+        bool
+            mustReset;
     };
 }

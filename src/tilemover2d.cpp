@@ -1,6 +1,7 @@
 #include "tilemover2d.h"
 
 #include <cstdio>
+#include <algorithm>
 
 namespace tilemover2d
 {
@@ -25,9 +26,9 @@ void Path::debugPrint() const
 
 Agent::Agent()
     :
-    speed(1.0f)
+    speed(1.0f),
+    radius(1.0f)
 {
-
 }
 
 void Agent::moveTo(const Position & target_position)
@@ -38,6 +39,47 @@ void Agent::moveTo(const Position & target_position)
         state = State::ACTIVE;
         positions[0] = position;
         positions[positions.size() - 1] = target_position;
+        currentTime = 0.0f;
+        currentDuration = 1.0f;
+        currentTargetIndex = 1;
+    }
+}
+
+void Agent::update(const float dt)
+{
+    switch(state)
+    {
+        case State::ACTIVE:
+        {
+            const Position & previousPosition = path.positions[currentTargetIndex - 1];
+            const Position & nextPosition = path.positions[currentTargetIndex];
+
+            currentTime += dt;
+            currentTime = std::min(currentTime, currentDuration);
+
+            float factor = currentTime / currentDuration;
+
+            position.x = previousPosition.x + (nextPosition.x - previousPosition.x) * factor;
+            position.y = previousPosition.y + (nextPosition.y - previousPosition.y) * factor;
+
+            if(currentTime >= currentDuration)
+            {
+                if(currentTargetIndex < path.positions.size() - 1)
+                {
+                    ++currentTargetIndex;
+                    currentTime = 0.0f;
+                    currentDuration = 1.0f;
+                }
+                else
+                {
+                    state = State::IDLE;
+                }
+            }
+        }
+        break;
+
+        case State::IDLE:
+        break;
     }
 }
 
@@ -47,9 +89,9 @@ void Agent::moveTo(const Position & target_position)
 
 World::World()
     :
-    pather(this)
+    pather(this),
+    mustReset(false)
 {
-
 }
 
 void World::init(const int _width, const int _height, const float tile_width, const float tile_height)
@@ -69,11 +111,6 @@ void World::setTileBlocking(const int x, const int y, const bool blocking)
 }
 
 const Tile & World::getTile(const int x, const int y) const
-{
-    return tiles[y*width + x];
-}
-
-Tile & World::getTile(const int x, const int y)
 {
     return tiles[y*width + x];
 }
@@ -112,8 +149,25 @@ Agent & World::createAgent(const Position & position)
 
     agent.position = position;
     agent.state = Agent::State::IDLE;
+    agent.world = this;
+
+    agents.push_back(& agent);
 
     return agent;
+}
+
+void World::update(const float dt)
+{
+    for(int i=0; i<agents.size(); ++i)
+    {
+        agents[i]->update(dt);
+    }
+
+    if(mustReset)
+    {
+        pather.Reset();
+        mustReset = false;
+    }
 }
 
 float World::LeastCostEstimate(void* stateStart, void* stateEnd)
@@ -128,14 +182,14 @@ float World::LeastCostEstimate(void* stateStart, void* stateEnd)
 
 void World::AdjacentCost(void* state, MP_VECTOR< micropather::StateCost > *adjacent)
 {
-    static const int dx[8] = { 1, 0, -1, 0 };
-    static const int dy[8] = { 0, 1, 0, -1 };
+    static const int dx[4] = { 1, 0, -1, 0 };
+    static const int dy[4] = { 0, 1, 0, -1 };
 
     Point p;
 
     nodeToPoint(state, p);
 
-    for( int i=0; i<8; ++i )
+    for(int i=0; i<4; ++i)
     {
         int nx = p.x + dx[i];
         int ny = p.y + dy[i];
@@ -153,6 +207,11 @@ void World::AdjacentCost(void* state, MP_VECTOR< micropather::StateCost > *adjac
             adjacent->push_back(node_cost);
         }
     }
+}
+
+Tile & World::getTile(const int x, const int y)
+{
+    return tiles[y*width + x];
 }
 
 void World::nodeToPoint(void* node, Point & p) 
@@ -175,7 +234,8 @@ void World::pointToPosition(Position & position, const Point & point)
 
 void World::positionToPoint(Point & point, const Position & position)
 {
-
+    point.x = int(position.x / tileWidth);
+    point.y = int(position.y / tileHeight);
 }
 
 }
