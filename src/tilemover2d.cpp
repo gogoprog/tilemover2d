@@ -83,6 +83,20 @@ void Agent::update(const float dt)
     }
 }
 
+void Agent::recomputePath()
+{
+    switch(state)
+    {
+        case State::ACTIVE:
+        {
+            Position target_position = path.positions[path.positions.size() - 1];
+            moveTo(target_position);
+            printf("(%.2f, %.2f)\n", target_position.x, target_position.y);
+
+        }
+    }
+}
+
 //
 // World
 //
@@ -107,7 +121,8 @@ void World::init(const int _width, const int _height, const float tile_width, co
 
 void World::setTileBlocking(const int x, const int y, const bool blocking)
 {
-    getTile(x, y).blocking = blocking;
+    internalGetTile(x, y).blocking = blocking;
+    mustReset = true;
 }
 
 const Tile & World::getTile(const int x, const int y) const
@@ -143,6 +158,19 @@ bool World::findPath(Path & path, const Point & from, const Point & to)
     return result == micropather::MicroPather::SOLVED;
 }
 
+bool World::findPoint(Point & point, const Position & position) const
+{
+    if(position.x > 0 && position.x <= tileWidth * width
+        && position.y > 0 && position.y <= tileHeight * height
+        )
+    {
+        positionToPoint(point, position);
+        return true;
+    }
+
+    return false;
+}
+
 Agent & World::createAgent(const Position & position)
 {
     Agent & agent = * new Agent();
@@ -158,15 +186,20 @@ Agent & World::createAgent(const Position & position)
 
 void World::update(const float dt)
 {
-    for(int i=0; i<agents.size(); ++i)
-    {
-        agents[i]->update(dt);
-    }
-
     if(mustReset)
     {
         pather.Reset();
         mustReset = false;
+
+        for(int i=0; i<agents.size(); ++i)
+        {
+            agents[i]->recomputePath();
+        }
+    }
+
+    for(int i=0; i<agents.size(); ++i)
+    {
+        agents[i]->update(dt);
     }
 }
 
@@ -209,30 +242,30 @@ void World::AdjacentCost(void* state, MP_VECTOR< micropather::StateCost > *adjac
     }
 }
 
-Tile & World::getTile(const int x, const int y)
+Tile & World::internalGetTile(const int x, const int y)
 {
     return tiles[y*width + x];
 }
 
-void World::nodeToPoint(void* node, Point & p) 
+void World::nodeToPoint(void* node, Point & p) const
 {
     intptr_t index = (intptr_t)node;
     p.y = index / width;
     p.x = index - p.y * width;
 }
 
-void *World::pointToNode(const Point & p)
+void *World::pointToNode(const Point & p) const
 {
     return (void*) (p.y*width + p.x);
 }
 
-void World::pointToPosition(Position & position, const Point & point)
+void World::pointToPosition(Position & position, const Point & point) const
 {
     position.x = point.x * tileWidth + tileWidth * 0.5f;
     position.y = point.y * tileHeight + tileHeight * 0.5f;
 }
 
-void World::positionToPoint(Point & point, const Position & position)
+void World::positionToPoint(Point & point, const Position & position) const
 {
     point.x = int(position.x / tileWidth);
     point.y = int(position.y / tileHeight);

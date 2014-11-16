@@ -8,6 +8,8 @@ namespace tilemover2d
 {
     struct Tile
     {
+        bool isBlocking() const { return blocking; }
+
         bool
             blocking;
     };
@@ -66,6 +68,7 @@ namespace tilemover2d
             radius;
     private:
         void update(const float dt);
+        void recomputePath();
 
         Position
             position;
@@ -91,6 +94,7 @@ namespace tilemover2d
         const Tile & getTile(const int x, const int y) const;
         bool findPath(Path & path, const Position & from, const Position & to);
         bool findPath(Path & path, const Point & from, const Point & to);
+        bool findPoint(Point & point, const Position & position) const;
         Agent & createAgent(const Position & position);
         void update(const float dt);
 
@@ -99,11 +103,11 @@ namespace tilemover2d
         virtual void AdjacentCost(void* state, MP_VECTOR< micropather::StateCost > *adjacent) override;
         virtual void PrintStateInfo( void* state ) override {}
 
-        Tile & getTile(const int x, const int y);
-        void nodeToPoint(void* node, Point & p);
-        void *pointToNode(const Point & p);
-        void pointToPosition(Position & position, const Point & point);
-        void positionToPoint(Point & point, const Position & position);
+        Tile & internalGetTile(const int x, const int y);
+        void nodeToPoint(void* node, Point & p) const;
+        void *pointToNode(const Point & p) const;
+        void pointToPosition(Position & position, const Point & point) const;
+        void positionToPoint(Point & point, const Position & position) const;
 
         micropather::MicroPather
             pather;

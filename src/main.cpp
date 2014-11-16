@@ -31,6 +31,8 @@ int mainTest()
 
     cout << "Finding a path" << endl;
 
+    world.setTileBlocking(5, 5, true);
+
     world.findPath(path, Point(1,1), Point(4, 4));
 
     path.debugPrint();
@@ -63,6 +65,32 @@ void drawGrid()
         glVertex2f(-xTileCount * tileSize, i * tileSize);
         glVertex2f(xTileCount * tileSize, i * tileSize);
         glEnd();
+    }
+}
+
+void drawBlockingTiles()
+{
+    glColor3f(0.6f, 0.1f, 0.1f);
+
+    for(int x=0; x<xTileCount; ++x)
+    {
+        for(int y=0; y<yTileCount; ++y)
+        {
+            if(world.getTile(x, y).isBlocking())
+            {
+                Position position;
+
+                position.x = x * tileSize;
+                position.y = y * tileSize;
+
+                glBegin(GL_QUADS);
+                glVertex2f(position.x, position.y);
+                glVertex2f(position.x + tileSize, position.y);
+                glVertex2f(position.x + tileSize, position.y + tileSize);
+                glVertex2f(position.x, position.y + tileSize);
+                glEnd();
+            }
+        }
     }
 }
 
@@ -110,6 +138,7 @@ void mainLoop(void)
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
     drawGrid();
+    drawBlockingTiles();
 
     for(int i=0; i<agents.size(); i++)
     {
@@ -129,7 +158,26 @@ void mainLoop(void)
 
 void onMouseEvent(int button, int state, int x, int y)
 {
-    cout << x << " " << y << endl;
+    if(state == GLUT_DOWN)
+    {
+        Position world_position;
+        Point point;
+
+        world_position.x = (x / float(windowWidth)) * xTileCount * tileSize;
+        world_position.y = ((windowHeight - y) / float(windowHeight)) * yTileCount * tileSize;
+
+        if(world.findPoint(point, world_position))
+        {
+            if(button == GLUT_LEFT_BUTTON)
+            {
+                agents[0]->moveTo(world_position);
+            }
+            else
+            {
+                world.setTileBlocking(point.x, point.y, true);
+            }
+        }
+    }
 }
 
 void reshape(int window_width, int window_height)
