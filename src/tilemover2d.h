@@ -69,6 +69,7 @@ namespace tilemover2d
     private:
         void update(const float dt);
         void recomputePath();
+        void prepareForTargetIndex(const uint index);
 
         Position
             position;

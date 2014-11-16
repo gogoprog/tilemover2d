@@ -41,6 +41,7 @@ int mainTest()
 
     agents.push_back(& world.createAgent(Position(10.0f, 10.0f)));
     agents[0]->radius = 10.0f;
+    agents[0]->speed = 100.0f;
 
     agents[0]->moveTo(Position(300.0f, 300.0f));
 

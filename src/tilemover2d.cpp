@@ -39,10 +39,23 @@ void Agent::moveTo(const Position & target_position)
         state = State::ACTIVE;
         positions[0] = position;
         positions[positions.size() - 1] = target_position;
-        currentTime = 0.0f;
-        currentDuration = 1.0f;
-        currentTargetIndex = 1;
+
+        prepareForTargetIndex(1);
     }
+}
+
+void Agent::prepareForTargetIndex(const uint index)
+{
+    const Position & previousPosition = path.positions[index - 1];
+    const Position & nextPosition = path.positions[index];
+
+    Position delta(nextPosition.x - previousPosition.x, nextPosition.y - previousPosition.y);
+
+    float distance = sqrt(delta.x * delta.x + delta.y * delta.y);
+
+    currentDuration = distance / speed;
+    currentTime = 0.0f;
+    currentTargetIndex = index;
 }
 
 void Agent::update(const float dt)
@@ -67,8 +80,7 @@ void Agent::update(const float dt)
                 if(currentTargetIndex < path.positions.size() - 1)
                 {
                     ++currentTargetIndex;
-                    currentTime = 0.0f;
-                    currentDuration = 1.0f;
+                    prepareForTargetIndex(currentTargetIndex);
                 }
                 else
                 {
@@ -89,10 +101,11 @@ void Agent::recomputePath()
     {
         case State::ACTIVE:
         {
-            Position target_position = path.positions[path.positions.size() - 1];
-            moveTo(target_position);
-            printf("(%.2f, %.2f)\n", target_position.x, target_position.y);
-
+            if(path.positions.size() > 0)
+            {
+                Position target_position = path.positions[path.positions.size() - 1];
+                moveTo(target_position);
+            }
         }
     }
 }
@@ -215,10 +228,11 @@ float World::LeastCostEstimate(void* stateStart, void* stateEnd)
 
 void World::AdjacentCost(void* state, MP_VECTOR< micropather::StateCost > *adjacent)
 {
-    static const int dx[4] = { 1, 0, -1, 0 };
-    static const int dy[4] = { 0, 1, 0, -1 };
+    static const int dx[5] = { 1, 0, -1, 0, 1 };
+    static const int dy[5] = { 0, 1, 0, -1, 0 };
 
     Point p;
+    bool result[4];
 
     nodeToPoint(state, p);
 
@@ -226,6 +240,7 @@ void World::AdjacentCost(void* state, MP_VECTOR< micropather::StateCost > *adjac
     {
         int nx = p.x + dx[i];
         int ny = p.y + dy[i];
+        result[i] = false;
 
         if(nx < 0 || ny < 0 || nx >= width || ny >= height)
         {
@@ -238,6 +253,27 @@ void World::AdjacentCost(void* state, MP_VECTOR< micropather::StateCost > *adjac
         {
             micropather::StateCost node_cost = { pointToNode(Point(nx, ny)), 1.0f };
             adjacent->push_back(node_cost);
+            result[i] = true;
+        }
+    }
+
+    result[4] = result[0];
+
+    for(int i=0; i<4; ++i)
+    {
+        if(result[i] && result[i+1])
+        {
+            int nx = p.x + dx[i] + dx[i + 1];
+            int ny = p.y + dy[i] + dy[i + 1];
+
+            const Tile & tile = getTile(nx, ny);
+
+            if(!tile.blocking)
+            {
+                micropather::StateCost node_cost = { pointToNode(Point(nx, ny)), 1.0f };
+                adjacent->push_back(node_cost);
+                result[i] = true;
+            }
         }
     }
 }
