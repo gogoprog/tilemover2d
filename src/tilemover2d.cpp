@@ -159,14 +159,13 @@ bool World::findPath(Path & path, const Point & from, const Point & to)
     int result = pather.Solve(pointToNode(from), pointToNode(to), &lastComputedPath, &path.cost);
 
     path.positions.resize(lastComputedPath.size());
+
     for(int i=0; i<lastComputedPath.size(); i++)
     {
         nodeToPoint(lastComputedPath[i],point);
 
         pointToPosition(path.positions[i], point);
     }
-
-    path.debugPrint();
 
     return result == micropather::MicroPather::SOLVED;
 }
@@ -287,7 +286,7 @@ void World::nodeToPoint(void* node, Point & p) const
 {
     intptr_t index = (intptr_t)node;
     p.y = index / width;
-    p.x = index - p.y * width;
+    p.x = index % width;
 }
 
 void *World::pointToNode(const Point & p) const

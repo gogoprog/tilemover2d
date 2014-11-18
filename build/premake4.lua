@@ -1,6 +1,8 @@
 solution "tilemover2d"
     configurations { "Debug" }
     
+    platforms { "x32", "x64" }
+
     project "tilemover2d-test"
         kind "ConsoleApp"
         language "C++"
