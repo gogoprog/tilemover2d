@@ -105,10 +105,10 @@ namespace tilemover2d
         virtual void PrintStateInfo( void* state ) override {}
 
         Tile & internalGetTile(const int x, const int y);
-        void nodeToPoint(void* node, Point & p) const;
-        void *pointToNode(const Point & p) const;
-        void pointToPosition(Position & position, const Point & point) const;
-        void positionToPoint(Point & point, const Position & position) const;
+        void getPointFromNode(Point & p, void* node) const;
+        void *getNodeFromPoint(const Point & p) const;
+        void getPositionFromPoint(Position & position, const Point & point) const;
+        void getPointFromPosition(Point & point, const Position & position) const;
 
         micropather::MicroPather
             pather;

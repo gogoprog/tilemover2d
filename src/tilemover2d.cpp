@@ -2,6 +2,7 @@
 
 #include <cstdio>
 #include <algorithm>
+#include <cassert>
 
 namespace tilemover2d
 {
@@ -146,8 +147,8 @@ const Tile & World::getTile(const int x, const int y) const
 bool World::findPath(Path & path, const Position & from, const Position & to)
 {
     Point a, b;
-    positionToPoint(a, from);
-    positionToPoint(b, to);
+    getPointFromPosition(a, from);
+    getPointFromPosition(b, to);
 
     return findPath(path, a, b);
 }
@@ -156,15 +157,18 @@ bool World::findPath(Path & path, const Point & from, const Point & to)
 {
     Point point;
     path.cost = 0;
-    int result = pather.Solve(pointToNode(from), pointToNode(to), &lastComputedPath, &path.cost);
+
+    lastComputedPath.resize(0);
+
+    int result = pather.Solve(getNodeFromPoint(from), getNodeFromPoint(to), &lastComputedPath, &path.cost);
 
     path.positions.resize(lastComputedPath.size());
 
     for(int i=0; i<lastComputedPath.size(); i++)
     {
-        nodeToPoint(lastComputedPath[i],point);
+        getPointFromNode(point, lastComputedPath[i]);
 
-        pointToPosition(path.positions[i], point);
+        getPositionFromPoint(path.positions[i], point);
     }
 
     return result == micropather::MicroPather::SOLVED;
@@ -176,7 +180,7 @@ bool World::findPoint(Point & point, const Position & position) const
         && position.y > 0 && position.y <= tileHeight * height
         )
     {
-        positionToPoint(point, position);
+        getPointFromPosition(point, position);
         return true;
     }
 
@@ -218,8 +222,8 @@ void World::update(const float dt)
 float World::LeastCostEstimate(void* stateStart, void* stateEnd)
 {
     Point start, end;
-    nodeToPoint(stateStart, start);
-    nodeToPoint(stateEnd, end);
+    getPointFromNode(start, stateStart);
+    getPointFromNode(end, stateEnd);
     int dx = start.x - end.x;
     int dy = start.y - end.y;
     return float(dx*dx + dy*dy);
@@ -233,7 +237,7 @@ void World::AdjacentCost(void* state, MP_VECTOR< micropather::StateCost > *adjac
     Point p;
     bool result[4];
 
-    nodeToPoint(state, p);
+    getPointFromNode(p, state);
 
     for(int i=0; i<4; ++i)
     {
@@ -250,7 +254,7 @@ void World::AdjacentCost(void* state, MP_VECTOR< micropather::StateCost > *adjac
 
         if(!tile.blocking)
         {
-            micropather::StateCost node_cost = { pointToNode(Point(nx, ny)), 1.0f };
+            micropather::StateCost node_cost = { getNodeFromPoint(Point(nx, ny)), 1.0f };
             adjacent->push_back(node_cost);
             result[i] = true;
         }
@@ -258,20 +262,24 @@ void World::AdjacentCost(void* state, MP_VECTOR< micropather::StateCost > *adjac
 
     result[4] = result[0];
 
-    for(int i=0; i<4; ++i)
+    for(int i=0; i<3; ++i)
     {
-        if(result[i] && result[i+1])
+        //if(result[i] && result[i+1])
         {
             int nx = p.x + dx[i] + dx[i + 1];
             int ny = p.y + dy[i] + dy[i + 1];
 
             const Tile & tile = getTile(nx, ny);
 
+            if(nx < 0 || ny < 0 || nx >= width || ny >= height)
+            {
+                continue;
+            }
+
             if(!tile.blocking)
             {
-                micropather::StateCost node_cost = { pointToNode(Point(nx, ny)), 1.0f };
+                micropather::StateCost node_cost = { getNodeFromPoint(Point(nx, ny)), 1.41f };
                 adjacent->push_back(node_cost);
-                result[i] = true;
             }
         }
     }
@@ -282,25 +290,25 @@ Tile & World::internalGetTile(const int x, const int y)
     return tiles[y*width + x];
 }
 
-void World::nodeToPoint(void* node, Point & p) const
+void World::getPointFromNode(Point & p, void* node) const
 {
     intptr_t index = (intptr_t)node;
     p.y = index / width;
     p.x = index % width;
 }
 
-void *World::pointToNode(const Point & p) const
+void *World::getNodeFromPoint(const Point & p) const
 {
     return (void*) (p.y*width + p.x);
 }
 
-void World::pointToPosition(Position & position, const Point & point) const
+void World::getPositionFromPoint(Position & position, const Point & point) const
 {
     position.x = point.x * tileWidth + tileWidth * 0.5f;
     position.y = point.y * tileHeight + tileHeight * 0.5f;
 }
 
-void World::positionToPoint(Point & point, const Position & position) const
+void World::getPointFromPosition(Point & point, const Position & position) const
 {
     point.x = int(position.x / tileWidth);
     point.y = int(position.y / tileHeight);
