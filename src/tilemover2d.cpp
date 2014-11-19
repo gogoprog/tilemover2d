@@ -235,7 +235,7 @@ void World::AdjacentCost(void* state, MP_VECTOR< micropather::StateCost > *adjac
     static const int dy[5] = { 0, 1, 0, -1, 0 };
 
     Point p;
-    bool result[4];
+    bool result[5];
 
     getPointFromNode(p, state);
 
@@ -264,7 +264,7 @@ void World::AdjacentCost(void* state, MP_VECTOR< micropather::StateCost > *adjac
 
     for(int i=0; i<3; ++i)
     {
-        //if(result[i] && result[i+1])
+        if(result[i] && result[i+1])
         {
             int nx = p.x + dx[i] + dx[i + 1];
             int ny = p.y + dy[i] + dy[i + 1];

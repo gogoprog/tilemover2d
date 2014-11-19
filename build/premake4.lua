@@ -3,6 +3,10 @@ solution "tilemover2d"
     
     platforms { "x32", "x64" }
 
+    --  ugly hack to use clang
+    premake.gcc.cc  = 'clang'
+    premake.gcc.cxx = 'clang++'
+
     project "tilemover2d-test"
         kind "ConsoleApp"
         language "C++"
