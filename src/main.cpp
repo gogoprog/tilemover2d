@@ -21,7 +21,8 @@ MP_VECTOR<Agent *>
 int
     previousTime(0),
     windowWidth,
-    windowHeight;
+    windowHeight,
+    buttonState[3];
 
 int mainTest()
 {
@@ -179,6 +180,26 @@ void onMouseEvent(int button, int state, int x, int y)
             }
         }
     }
+
+    buttonState[button] = state;
+}
+
+void onMouseMove(int x, int y)
+{
+    if(buttonState[GLUT_RIGHT_BUTTON] == GLUT_DOWN)
+    {
+        Position world_position;
+        Point point;
+
+        world_position.x = (x / float(windowWidth)) * xTileCount * tileSize;
+        world_position.y = ((windowHeight - y) / float(windowHeight)) * yTileCount * tileSize;
+
+        if(world.findPoint(point, world_position))
+        {
+
+            world.setTileBlocking(point.x, point.y, true);
+        }
+    }
 }
 
 void reshape(int window_width, int window_height)
@@ -206,11 +227,16 @@ int main(int argc, char **argv)
     glutCreateWindow("tilemover2d - test");
     glutDisplayFunc(mainLoop);
     glutMouseFunc(onMouseEvent);
+    glutMotionFunc(onMouseMove);
     glutReshapeFunc(reshape);
 
     disk = gluNewQuadric();
 
     glClearColor(0.3f, 0.3f, 0.3f, 1.0f);
+
+    buttonState[GLUT_LEFT_BUTTON] = GLUT_UP;
+    buttonState[GLUT_RIGHT_BUTTON] = GLUT_UP;
+
     glutMainLoop();
 
     return 0;
