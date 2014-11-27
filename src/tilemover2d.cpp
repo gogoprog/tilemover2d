@@ -19,6 +19,23 @@ float getDistance(const Vector2 & a, const Vector2 & b)
     return sqrt(delta.x * delta.x + delta.y * delta.y);
 }
 
+bool lineCircleIntersection(const Vector2 & from,const Vector2 & to, const Vector2 & circleCenter, const float radius )
+{
+    float dx = to.x - from.x;
+    float dy = to.y - from.y;
+    float a = dx * dx + dy * dy;
+    float b = 2 * (dx * (from.x - circleCenter.x) + dy * (from.y - circleCenter.y));
+    float c = circleCenter.x * circleCenter.x + circleCenter.y * circleCenter.y;
+
+    c += from.x * from.x + from.y * from.y;
+    c -= 2 * (circleCenter.x * from.x + circleCenter.y * from.y);
+    c -= radius * radius;
+
+    float bb4ac = b * b - 4 * a * c;
+
+    return bb4ac >= 0;
+}
+
 //
 // Path
 //
@@ -59,13 +76,6 @@ void Agent::moveTo(const Vector2 & target_position)
 
 void Agent::prepareForTargetIndex(const uint index)
 {
-    const Vector2 & previousPosition = path.positions[index - 1];
-    const Vector2 & nextPosition = path.positions[index];
-
-    float distance = getDistance(previousPosition, nextPosition);
-
-    currentDuration = distance / speed;
-    currentTime = 0.0f;
     currentTargetIndex = index;
 }
 
@@ -78,15 +88,33 @@ void Agent::update(const float dt)
             const Vector2 & previousPosition = path.positions[currentTargetIndex - 1];
             const Vector2 & nextPosition = path.positions[currentTargetIndex];
 
-            currentTime += dt;
-            currentTime = std::min(currentTime, currentDuration);
+            velocity.x = nextPosition.x - position.x;
+            velocity.y = nextPosition.y - position.y;
 
-            float factor = currentTime / currentDuration;
+            float length = getDistance(nextPosition, position);
 
-            position.x = previousPosition.x + (nextPosition.x - previousPosition.x) * factor;
-            position.y = previousPosition.y + (nextPosition.y - previousPosition.y) * factor;
+            velocity.x *= speed / length;
+            velocity.y *= speed / length;
 
-            if(currentTime >= currentDuration)
+            const MP_VECTOR< Agent *> & agents = world->getAgents();
+
+            for(int i=0; i<agents.size(); i++)
+            {
+                Agent & other_agent = * agents[i];
+
+                if(& other_agent != this)
+                {
+                    if(lineCircleIntersection(position, velocity, other_agent.position, other_agent.radius))
+                    {
+                        //velocity.x += 100;
+                    }
+                }
+            }
+
+            position.x += velocity.x * dt;
+            position.y += velocity.y * dt;
+
+            if(getSquareDistance(nextPosition, position) < 1.0f)
             {
                 if(currentTargetIndex < path.positions.size() - 1)
                 {

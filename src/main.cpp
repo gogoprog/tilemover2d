@@ -230,7 +230,6 @@ void onMouseMove(int x, int y)
 
         if(world.findPoint(point, world_position))
         {
-
             world.setTileBlocking(point.x, point.y, true);
         }
     }

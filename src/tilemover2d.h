@@ -63,6 +63,7 @@ namespace tilemover2d
         State getState() const { return state; };
         const Path & getPath() const { return path; };
         const Vector2 & getPosition() const { return position; };
+        const Vector2 & getVelocity() const { return velocity; };
         void moveTo(const Vector2 & position);
 
         float
@@ -74,7 +75,8 @@ namespace tilemover2d
         void prepareForTargetIndex(const uint index);
 
         Vector2
-            position;
+            position,
+            velocity;
         State
             state;
         Path
@@ -99,6 +101,7 @@ namespace tilemover2d
         bool findPath(Path & path, const Point & from, const Point & to);
         bool findPoint(Point & point, const Vector2 & position) const;
         Agent & createAgent(const Vector2 & position);
+        const MP_VECTOR< Agent *> & getAgents() const { return agents; }
         void update(const float dt);
 
     private:
