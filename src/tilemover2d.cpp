@@ -262,7 +262,7 @@ void World::AdjacentCost(void* state, MP_VECTOR< micropather::StateCost > *adjac
 
     result[4] = result[0];
 
-    for(int i=0; i<3; ++i)
+    for(int i=0; i<4; ++i)
     {
         if(result[i] && result[i+1])
         {
