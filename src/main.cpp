@@ -22,7 +22,9 @@ int
     previousTime(0),
     windowWidth,
     windowHeight,
-    buttonState[3];
+    buttonState[3],
+    mouseX,
+    mouseY;
 
 int mainTest()
 {
@@ -158,6 +160,16 @@ void mainLoop(void)
     glutPostRedisplay();
 }
 
+int screenToWorldX(const int x)
+{
+    return (x / float(windowWidth)) * xTileCount * tileSize;
+}
+
+int screenToWorldY(const int y)
+{
+    return ((windowHeight - y) / float(windowHeight)) * yTileCount * tileSize;
+}
+
 void onMouseEvent(int button, int state, int x, int y)
 {
     if(state == GLUT_DOWN)
@@ -165,14 +177,18 @@ void onMouseEvent(int button, int state, int x, int y)
         Position world_position;
         Point point;
 
-        world_position.x = (x / float(windowWidth)) * xTileCount * tileSize;
-        world_position.y = ((windowHeight - y) / float(windowHeight)) * yTileCount * tileSize;
+        world_position.x = screenToWorldX(x);
+        world_position.y = screenToWorldY(y);
 
         if(world.findPoint(point, world_position))
         {
             if(button == GLUT_LEFT_BUTTON)
             {
-                agents[0]->moveTo(world_position);
+                for(int i=0; i<agents.size(); i++)
+                {
+                    Agent & agent = * agents[i];
+                    agent.moveTo(world_position);
+                }
             }
             else
             {
@@ -186,19 +202,58 @@ void onMouseEvent(int button, int state, int x, int y)
 
 void onMouseMove(int x, int y)
 {
+    if(buttonState[GLUT_LEFT_BUTTON] == GLUT_DOWN)
+    {
+        Position world_position;
+        Point point;
+
+        world_position.x = screenToWorldX(x);
+        world_position.y = screenToWorldY(y);
+
+        if(world.findPoint(point, world_position))
+        {
+            for(int i=0; i<agents.size(); i++)
+            {
+                Agent & agent = * agents[i];
+                agent.moveTo(world_position);
+            }
+        }
+    }
+
     if(buttonState[GLUT_RIGHT_BUTTON] == GLUT_DOWN)
     {
         Position world_position;
         Point point;
 
-        world_position.x = (x / float(windowWidth)) * xTileCount * tileSize;
-        world_position.y = ((windowHeight - y) / float(windowHeight)) * yTileCount * tileSize;
+        world_position.x = screenToWorldX(x);
+        world_position.y = screenToWorldY(y);
 
         if(world.findPoint(point, world_position))
         {
 
             world.setTileBlocking(point.x, point.y, true);
         }
+    }
+
+    mouseX = x;
+    mouseY = y;
+}
+
+void onKeyboardEvent(unsigned char key, int x, int y)
+{
+    switch(key)
+    {
+        case 'a':
+        {
+            Agent & agent = world.createAgent(Position(screenToWorldX(x), screenToWorldY(y)));
+
+            agent.radius = 10.0f;
+            agent.speed = 100.0f;
+
+
+            agents.push_back(& agent);
+        }
+        break;
     }
 }
 
@@ -228,6 +283,7 @@ int main(int argc, char **argv)
     glutDisplayFunc(mainLoop);
     glutMouseFunc(onMouseEvent);
     glutMotionFunc(onMouseMove);
+    glutKeyboardFunc(onKeyboardEvent);
     glutReshapeFunc(reshape);
 
     disk = gluNewQuadric();

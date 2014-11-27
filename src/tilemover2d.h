@@ -24,21 +24,23 @@ namespace tilemover2d
             y;
     };
 
-    struct Position
+    struct Vector2
     {
-        Position() {}
-        Position(const float _x, const float _y) : x(_x), y(_y) {}
+        Vector2() {}
+        Vector2(const float _x, const float _y) : x(_x), y(_y) {}
 
         float
             x,
             y;
     };
 
+    typedef Vector2 Position;
+
     struct Path
     {
         void debugPrint() const;
 
-        MP_VECTOR<Position>
+        MP_VECTOR<Vector2>
             positions;
         float
             cost;
@@ -60,8 +62,8 @@ namespace tilemover2d
         Agent();
         State getState() const { return state; };
         const Path & getPath() const { return path; };
-        const Position & getPosition() const { return position; };
-        void moveTo(const Position & position);
+        const Vector2 & getPosition() const { return position; };
+        void moveTo(const Vector2 & position);
 
         float
             speed,
@@ -71,7 +73,7 @@ namespace tilemover2d
         void recomputePath();
         void prepareForTargetIndex(const uint index);
 
-        Position
+        Vector2
             position;
         State
             state;
@@ -93,10 +95,10 @@ namespace tilemover2d
         void init(const int width, const int height, const float tile_width, const float tile_height);
         void setTileBlocking(const int x, const int y, const bool blocking);
         const Tile & getTile(const int x, const int y) const;
-        bool findPath(Path & path, const Position & from, const Position & to);
+        bool findPath(Path & path, const Vector2 & from, const Vector2 & to);
         bool findPath(Path & path, const Point & from, const Point & to);
-        bool findPoint(Point & point, const Position & position) const;
-        Agent & createAgent(const Position & position);
+        bool findPoint(Point & point, const Vector2 & position) const;
+        Agent & createAgent(const Vector2 & position);
         void update(const float dt);
 
     private:
@@ -107,8 +109,8 @@ namespace tilemover2d
         Tile & internalGetTile(const int x, const int y);
         void getPointFromNode(Point & p, void* node) const;
         void *getNodeFromPoint(const Point & p) const;
-        void getPositionFromPoint(Position & position, const Point & point) const;
-        void getPointFromPosition(Point & point, const Position & position) const;
+        void getPositionFromPoint(Vector2 & position, const Point & point) const;
+        void getPointFromPosition(Point & point, const Vector2 & position) const;
 
         micropather::MicroPather
             pather;

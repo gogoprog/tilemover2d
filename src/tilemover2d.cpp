@@ -7,6 +7,18 @@
 namespace tilemover2d
 {
 
+float getSquareDistance(const Vector2 & a, const Vector2 & b)
+{
+    Vector2 delta(b.x - a.x, b.y - a.y);
+    return (delta.x * delta.x + delta.y * delta.y);
+}
+
+float getDistance(const Vector2 & a, const Vector2 & b)
+{
+    Vector2 delta(b.x - a.x, b.y - a.y);
+    return sqrt(delta.x * delta.x + delta.y * delta.y);
+}
+
 //
 // Path
 //
@@ -15,7 +27,7 @@ void Path::debugPrint() const
 {
     for(int i=0; i<positions.size(); i++)
     {
-        const Position & p = positions[i];
+        const Vector2 & p = positions[i];
 
         printf("(%.2f, %.2f)\n", p.x, p.y);
     }
@@ -32,11 +44,11 @@ Agent::Agent()
 {
 }
 
-void Agent::moveTo(const Position & target_position)
+void Agent::moveTo(const Vector2 & target_position)
 {
     if(world->findPath(path, position, target_position))
     {
-        MP_VECTOR<Position> & positions = path.positions;
+        MP_VECTOR<Vector2> & positions = path.positions;
         state = State::ACTIVE;
         positions[0] = position;
         positions[positions.size() - 1] = target_position;
@@ -47,12 +59,10 @@ void Agent::moveTo(const Position & target_position)
 
 void Agent::prepareForTargetIndex(const uint index)
 {
-    const Position & previousPosition = path.positions[index - 1];
-    const Position & nextPosition = path.positions[index];
+    const Vector2 & previousPosition = path.positions[index - 1];
+    const Vector2 & nextPosition = path.positions[index];
 
-    Position delta(nextPosition.x - previousPosition.x, nextPosition.y - previousPosition.y);
-
-    float distance = sqrt(delta.x * delta.x + delta.y * delta.y);
+    float distance = getDistance(previousPosition, nextPosition);
 
     currentDuration = distance / speed;
     currentTime = 0.0f;
@@ -65,8 +75,8 @@ void Agent::update(const float dt)
     {
         case State::ACTIVE:
         {
-            const Position & previousPosition = path.positions[currentTargetIndex - 1];
-            const Position & nextPosition = path.positions[currentTargetIndex];
+            const Vector2 & previousPosition = path.positions[currentTargetIndex - 1];
+            const Vector2 & nextPosition = path.positions[currentTargetIndex];
 
             currentTime += dt;
             currentTime = std::min(currentTime, currentDuration);
@@ -104,7 +114,7 @@ void Agent::recomputePath()
         {
             if(path.positions.size() > 0)
             {
-                Position target_position = path.positions[path.positions.size() - 1];
+                Vector2 target_position = path.positions[path.positions.size() - 1];
                 moveTo(target_position);
             }
         }
@@ -144,7 +154,7 @@ const Tile & World::getTile(const int x, const int y) const
     return tiles[y*width + x];
 }
 
-bool World::findPath(Path & path, const Position & from, const Position & to)
+bool World::findPath(Path & path, const Vector2 & from, const Vector2 & to)
 {
     Point a, b;
     getPointFromPosition(a, from);
@@ -174,7 +184,7 @@ bool World::findPath(Path & path, const Point & from, const Point & to)
     return result == micropather::MicroPather::SOLVED;
 }
 
-bool World::findPoint(Point & point, const Position & position) const
+bool World::findPoint(Point & point, const Vector2 & position) const
 {
     if(position.x > 0 && position.x <= tileWidth * width
         && position.y > 0 && position.y <= tileHeight * height
@@ -187,7 +197,7 @@ bool World::findPoint(Point & point, const Position & position) const
     return false;
 }
 
-Agent & World::createAgent(const Position & position)
+Agent & World::createAgent(const Vector2 & position)
 {
     Agent & agent = * new Agent();
 
@@ -302,13 +312,13 @@ void *World::getNodeFromPoint(const Point & p) const
     return (void*) (p.y*width + p.x);
 }
 
-void World::getPositionFromPoint(Position & position, const Point & point) const
+void World::getPositionFromPoint(Vector2 & position, const Point & point) const
 {
     position.x = point.x * tileWidth + tileWidth * 0.5f;
     position.y = point.y * tileHeight + tileHeight * 0.5f;
 }
 
-void World::getPointFromPosition(Point & point, const Position & position) const
+void World::getPointFromPosition(Point & point, const Vector2 & position) const
 {
     point.x = int(position.x / tileWidth);
     point.y = int(position.y / tileHeight);
