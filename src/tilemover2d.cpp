@@ -19,7 +19,12 @@ float getDistance(const Vector2 & a, const Vector2 & b)
     return sqrt(delta.x * delta.x + delta.y * delta.y);
 }
 
-bool lineCircleIntersection(const Vector2 & from,const Vector2 & to, const Vector2 & circleCenter, const float radius )
+float getLength(const Vector2 & a)
+{
+    return sqrt(a.x * a.x + a.y * a.y);
+}
+
+bool lineCircleIntersection(const Vector2 & from,const Vector2 & to, const Vector2 & circleCenter, const float radius)
 {
     float dx = to.x - from.x;
     float dy = to.y - from.y;
@@ -34,6 +39,11 @@ bool lineCircleIntersection(const Vector2 & from,const Vector2 & to, const Vecto
     float bb4ac = b * b - 4 * a * c;
 
     return bb4ac >= 0;
+}
+
+bool circleCircleIntersection(const Vector2 & circleCenter, const float radius, const Vector2 & circleCenter2, const float radius2)
+{
+    return getSquareDistance(circleCenter, circleCenter2) < (radius + radius2) * (radius + radius2);
 }
 
 //
@@ -87,6 +97,7 @@ void Agent::update(const float dt)
         {
             const Vector2 & previousPosition = path.positions[currentTargetIndex - 1];
             const Vector2 & nextPosition = path.positions[currentTargetIndex];
+            Vector2 futurePosition, delta;
 
             velocity.x = nextPosition.x - position.x;
             velocity.y = nextPosition.y - position.y;
@@ -96,23 +107,13 @@ void Agent::update(const float dt)
             velocity.x *= speed / length;
             velocity.y *= speed / length;
 
-            const MP_VECTOR< Agent *> & agents = world->getAgents();
+            delta.x = velocity.x * dt;
+            delta.y = velocity.y * dt;
 
-            for(int i=0; i<agents.size(); i++)
-            {
-                Agent & other_agent = * agents[i];
+            futurePosition.x = position.x + delta.x;
+            futurePosition.y = position.y + delta.y;
 
-                if(& other_agent != this)
-                {
-                    if(lineCircleIntersection(position, velocity, other_agent.position, other_agent.radius))
-                    {
-                        //velocity.x += 100;
-                    }
-                }
-            }
-
-            position.x += velocity.x * dt;
-            position.y += velocity.y * dt;
+            position = futurePosition;
 
             if(getSquareDistance(nextPosition, position) < 1.0f)
             {
