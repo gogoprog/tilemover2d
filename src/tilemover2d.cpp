@@ -47,6 +47,49 @@ bool circleCircleIntersection(const Vector2 & circleCenter, const float radius, 
 }
 
 //
+// Vector2
+//
+
+Vector2 & Vector2::operator+=(const Vector2 & other)
+{
+    x += other.x;
+    y += other.y;
+
+    return * this;
+}
+
+Vector2 & Vector2::operator-=(const Vector2 & other)
+{
+    x -= other.x;
+    y -= other.y;
+
+    return * this;
+}
+
+Vector2 & Vector2::operator*=(const float value)
+{
+    x *= value;
+    y *= value;
+
+    return * this;
+}
+
+Vector2 operator+(const Vector2 & a, const Vector2 & b)
+{
+    return Vector2(a.x + b.x, a.y + b.y);
+}
+
+Vector2 operator-(const Vector2 & a, const Vector2 & b)
+{
+    return Vector2(a.x - b.x, a.y - b.y);
+}
+
+Vector2 operator*(const Vector2 & a, const float value)
+{
+    return Vector2(a.x * value, a.y * value);
+}
+
+//
 // Path
 //
 
@@ -98,16 +141,13 @@ void Agent::update(const float dt)
             const Vector2 & previousPosition = path.positions[currentTargetIndex - 1];
             const Vector2 & nextPosition = path.positions[currentTargetIndex];
 
-            velocity.x = nextPosition.x - position.x;
-            velocity.y = nextPosition.y - position.y;
+            velocity = nextPosition - position;
 
             float length = getDistance(nextPosition, position);
 
-            velocity.x *= speed / length;
-            velocity.y *= speed / length;
+            velocity *= speed / length;
 
-            desiredDisplacement.x = velocity.x * dt;
-            desiredDisplacement.y = velocity.y * dt;
+            desiredDisplacement = velocity * dt;
         }
         break;
 
@@ -124,8 +164,7 @@ void Agent::postUpdate()
         {
             const Vector2 & nextPosition = path.positions[currentTargetIndex];
 
-            position.x = position.x + desiredDisplacement.x;
-            position.y = position.y + desiredDisplacement.y;
+            position += desiredDisplacement;
 
             if(getSquareDistance(nextPosition, position) < 1.0f)
             {

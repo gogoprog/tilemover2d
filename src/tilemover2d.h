@@ -29,10 +29,18 @@ namespace tilemover2d
         Vector2() {}
         Vector2(const float _x, const float _y) : x(_x), y(_y) {}
 
+        Vector2 & operator+=(const Vector2 & other);
+        Vector2 & operator-=(const Vector2 & other);
+        Vector2 & operator*=(const float value);
+
         float
             x,
             y;
     };
+
+    Vector2 operator+(const Vector2 & a, const Vector2 & b);
+    Vector2 operator-(const Vector2 & a, const Vector2 & b);
+    Vector2 operator*(const Vector2 & a, const float value);
 
     typedef Vector2 Position;
 
