@@ -71,12 +71,14 @@ namespace tilemover2d
             radius;
     private:
         void update(const float dt);
+        void postUpdate();
         void recomputePath();
         void prepareForTargetIndex(const uint index);
 
         Vector2
             position,
-            velocity;
+            velocity,
+            desiredDisplacement;
         State
             state;
         Path

@@ -97,7 +97,6 @@ void Agent::update(const float dt)
         {
             const Vector2 & previousPosition = path.positions[currentTargetIndex - 1];
             const Vector2 & nextPosition = path.positions[currentTargetIndex];
-            Vector2 futurePosition, delta;
 
             velocity.x = nextPosition.x - position.x;
             velocity.y = nextPosition.y - position.y;
@@ -107,13 +106,26 @@ void Agent::update(const float dt)
             velocity.x *= speed / length;
             velocity.y *= speed / length;
 
-            delta.x = velocity.x * dt;
-            delta.y = velocity.y * dt;
+            desiredDisplacement.x = velocity.x * dt;
+            desiredDisplacement.y = velocity.y * dt;
+        }
+        break;
 
-            futurePosition.x = position.x + delta.x;
-            futurePosition.y = position.y + delta.y;
+        case State::IDLE:
+        break;
+    }
+}
 
-            position = futurePosition;
+void Agent::postUpdate()
+{
+    switch(state)
+    {
+        case State::ACTIVE:
+        {
+            const Vector2 & nextPosition = path.positions[currentTargetIndex];
+
+            position.x = position.x + desiredDisplacement.x;
+            position.y = position.y + desiredDisplacement.y;
 
             if(getSquareDistance(nextPosition, position) < 1.0f)
             {
@@ -128,10 +140,6 @@ void Agent::update(const float dt)
                 }
             }
         }
-        break;
-
-        case State::IDLE:
-        break;
     }
 }
 
@@ -255,6 +263,12 @@ void World::update(const float dt)
     for(int i=0; i<agents.size(); ++i)
     {
         agents[i]->update(dt);
+    }
+
+
+    for(int i=0; i<agents.size(); ++i)
+    {
+        agents[i]->postUpdate();
     }
 }
 
