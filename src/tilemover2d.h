@@ -41,6 +41,8 @@ namespace tilemover2d
     Vector2 operator+(const Vector2 & a, const Vector2 & b);
     Vector2 operator-(const Vector2 & a, const Vector2 & b);
     Vector2 operator*(const Vector2 & a, const float value);
+    bool operator==(const Vector2 & a, const Vector2 & b);
+    bool operator!=(const Vector2 & a, const Vector2 & b);
 
     typedef Vector2 Position;
 

@@ -89,6 +89,16 @@ Vector2 operator*(const Vector2 & a, const float value)
     return Vector2(a.x * value, a.y * value);
 }
 
+bool operator==(const Vector2 & a, const Vector2 & b)
+{
+    return a.x == b.x && a.y == b.y;
+}
+
+bool operator!=(const Vector2 & a, const Vector2 & b)
+{
+    return a.x != b.x || a.y != b.y;
+}
+
 //
 // Path
 //
@@ -304,6 +314,43 @@ void World::update(const float dt)
         agents[i]->update(dt);
     }
 
+    bool it_collides;
+
+    do
+    {
+        it_collides = false;
+
+        for(int i=0; i<agents.size(); ++i)
+        {
+            Agent & agent = * agents[i];
+
+            for(int j=0; j<agents.size(); ++j)
+            {
+                Agent & other_agent = * agents[j];
+
+                if(i != j)
+                {
+                    if(circleCircleIntersection(agent.position + agent.desiredDisplacement, agent.radius, other_agent.position + other_agent.desiredDisplacement, other_agent.radius))
+                    {
+                        if(agent.desiredDisplacement != Vector2(0,0))
+                        {
+                            //it_collides = true;
+                            //agent.position -= agent.desiredDisplacement * 0.5f;
+
+                            agent.desiredDisplacement = Vector2(0, 0);
+                            continue;
+                        }
+                    }
+                }
+            }
+
+            if(it_collides)
+            {
+                continue;
+            }
+        }
+    }
+    while(it_collides);
 
     for(int i=0; i<agents.size(); ++i)
     {
