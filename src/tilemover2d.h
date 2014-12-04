@@ -56,6 +56,11 @@ namespace tilemover2d
             cost;
     };
 
+    class Agent;
+
+    typedef MP_VECTOR< Agent *>
+        AgentTable;
+
     class World;
     class Agent
     {
@@ -81,14 +86,17 @@ namespace tilemover2d
             radius;
     private:
         void update(const float dt);
-        void postUpdate();
+        void postUpdate(const float dt);
         void recomputePath();
         void prepareForTargetIndex(const uint index);
+        bool getCollidingAgents(AgentTable & others_table) const;
+        bool collides() const;
 
         Vector2
             position,
             velocity,
-            desiredDisplacement;
+            desiredDisplacement,
+            finalDisplacement;
         State
             state;
         Path
@@ -100,6 +108,8 @@ namespace tilemover2d
             currentDuration;
         uint
             currentTargetIndex;
+        char
+            tryIndex;
     };
 
     class World : public micropather::Graph
@@ -113,7 +123,7 @@ namespace tilemover2d
         bool findPath(Path & path, const Point & from, const Point & to);
         bool findPoint(Point & point, const Vector2 & position) const;
         Agent & createAgent(const Vector2 & position);
-        const MP_VECTOR< Agent *> & getAgents() const { return agents; }
+        const AgentTable & getAgents() const { return agents; }
         void update(const float dt);
 
     private:
@@ -139,7 +149,7 @@ namespace tilemover2d
             * tiles;
         MP_VECTOR< void* >
             lastComputedPath;
-        MP_VECTOR< Agent *>
+        AgentTable
             agents;
         bool
             mustReset;

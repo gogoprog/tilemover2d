@@ -24,6 +24,21 @@ float getLength(const Vector2 & a)
     return sqrt(a.x * a.x + a.y * a.y);
 }
 
+bool normalize(Vector2 & v)
+{
+    float length = getLength(v);
+
+    if(length > 0)
+    {
+        v.x /= length;
+        v.y /= length;
+
+        return true;
+    }
+
+    return false;
+}
+
 bool lineCircleIntersection(const Vector2 & from,const Vector2 & to, const Vector2 & circleCenter, const float radius)
 {
     float dx = to.x - from.x;
@@ -137,11 +152,6 @@ void Agent::moveTo(const Vector2 & target_position)
     }
 }
 
-void Agent::prepareForTargetIndex(const uint index)
-{
-    currentTargetIndex = index;
-}
-
 void Agent::update(const float dt)
 {
     switch(state)
@@ -158,6 +168,9 @@ void Agent::update(const float dt)
             velocity *= speed / length;
 
             desiredDisplacement = velocity * dt;
+            finalDisplacement = desiredDisplacement;
+
+            tryIndex = 0;
         }
         break;
 
@@ -166,7 +179,7 @@ void Agent::update(const float dt)
     }
 }
 
-void Agent::postUpdate()
+void Agent::postUpdate(const float dt)
 {
     switch(state)
     {
@@ -174,7 +187,7 @@ void Agent::postUpdate()
         {
             const Vector2 & nextPosition = path.positions[currentTargetIndex];
 
-            position += desiredDisplacement;
+            position += velocity * dt;
 
             if(getSquareDistance(nextPosition, position) < 1.0f)
             {
@@ -205,6 +218,51 @@ void Agent::recomputePath()
             }
         }
     }
+}
+
+void Agent::prepareForTargetIndex(const uint index)
+{
+    currentTargetIndex = index;
+}
+
+bool Agent::getCollidingAgents(AgentTable & others_table) const
+{
+    const AgentTable & agents = world->getAgents();
+
+    for(int a=0; a<agents.size(); ++a)
+    {
+        Agent & other_agent = * agents[a];
+
+        if(this != & other_agent)
+        {
+            if(circleCircleIntersection(position + desiredDisplacement, radius, other_agent.position + other_agent.desiredDisplacement, other_agent.radius))
+            {
+                others_table.push_back(&other_agent);
+            }
+        }
+    }
+
+    return others_table.size() > 0;
+}
+
+bool Agent::collides() const
+{
+    const AgentTable & agents = world->getAgents();
+
+    for(int a=0; a<agents.size(); ++a)
+    {
+        Agent & other_agent = * agents[a];
+
+        if(this != & other_agent)
+        {
+            if(circleCircleIntersection(position + desiredDisplacement, radius, other_agent.position + other_agent.desiredDisplacement, other_agent.radius))
+            {
+                return true;
+            }
+        }
+    }
+
+    return false;
 }
 
 //
@@ -315,8 +373,9 @@ void World::update(const float dt)
     }
 
     bool it_collides;
+    AgentTable others_agents;
 
-    do
+    for(int t=0; t<100; t++)
     {
         it_collides = false;
 
@@ -324,37 +383,51 @@ void World::update(const float dt)
         {
             Agent & agent = * agents[i];
 
-            for(int j=0; j<agents.size(); ++j)
+            others_agents.resize(0);
+
+            if(agent.getCollidingAgents(others_agents))
             {
-                Agent & other_agent = * agents[j];
+                it_collides = true;
 
-                if(i != j)
+                switch(agent.tryIndex)
                 {
-                    if(circleCircleIntersection(agent.position + agent.desiredDisplacement, agent.radius, other_agent.position + other_agent.desiredDisplacement, other_agent.radius))
+                    case 0:
                     {
-                        if(agent.desiredDisplacement != Vector2(0,0))
+                        for(int o=0; o<others_agents.size(); ++o)
                         {
-                            //it_collides = true;
-                            //agent.position -= agent.desiredDisplacement * 0.5f;
+                            Agent & other_agent = * others_agents[o];
 
-                            agent.desiredDisplacement = Vector2(0, 0);
-                            continue;
+                            agent.velocity += other_agent.position - agent.position;
+                        }
+
+                        agent.velocity *= -1.0f;
+                    }
+                    break;
+
+                    case 1:
+                    {
+                        if(agent.desiredDisplacement != Vector2(0, 0))
+                        {
+                            agent.finalDisplacement = Vector2(0, 0);
                         }
                     }
+                    break;
                 }
-            }
 
-            if(it_collides)
-            {
-                continue;
+                //agent.tryIndex++;
+                //agent.tryIndex %= 2;
             }
         }
+
+        if(!it_collides)
+        {
+            break;
+        }
     }
-    while(it_collides);
 
     for(int i=0; i<agents.size(); ++i)
     {
-        agents[i]->postUpdate();
+        agents[i]->postUpdate(dt);
     }
 }
 
