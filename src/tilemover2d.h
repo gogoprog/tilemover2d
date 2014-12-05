@@ -97,7 +97,8 @@ namespace tilemover2d
             position,
             velocity,
             desiredDisplacement,
-            finalDisplacement;
+            separation,
+            alignment;
         State
             state;
         Path

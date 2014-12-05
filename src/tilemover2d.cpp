@@ -168,7 +168,9 @@ void Agent::update(const float dt)
             velocity *= speed / length;
 
             desiredDisplacement = velocity * dt;
-            finalDisplacement = desiredDisplacement;
+            separation = Vector2(0, 0);
+            alignment = Vector2(0, 0);
+            normalize(velocity);
         }
         break;
 
@@ -185,7 +187,13 @@ void Agent::postUpdate(const float dt)
         {
             const Vector2 & nextPosition = path.positions[currentTargetIndex];
 
-            position += velocity * dt;
+            velocity += alignment * 0.1f + separation * 1.0f;
+
+            if(normalize(velocity))
+            {
+                velocity *= speed;
+                position += velocity * dt;
+            }
 
             if(getSquareDistance(nextPosition, position) < 1.0f)
             {
@@ -197,6 +205,7 @@ void Agent::postUpdate(const float dt)
                 else
                 {
                     state = State::IDLE;
+                    velocity = Vector2(0, 0);
                 }
             }
         }
@@ -392,42 +401,41 @@ void World::update(const float dt)
 
     AgentTable others_agents;
 
-    bool it_collides;
-
-    for(int t=0; t<100; t++)
+    for(int i=0; i<agents.size(); ++i)
     {
-        it_collides = false;
+        Agent & agent = * agents[i];
 
-        for(int i=0; i<agents.size(); ++i)
+        if(agent.getNeighborhood(others_agents))
         {
-            Agent & agent = * agents[i];
-
-            others_agents.resize(0);
-
-            if(agent.getCollidingAgents(others_agents))
+            for(int o=0; o<others_agents.size(); ++o)
             {
-                it_collides = true;
+                Agent & other_agent = * others_agents[o];
 
-                agent.velocity = agent.desiredDisplacement;
-
-                for(int o=0; o<others_agents.size(); ++o)
-                {
-                    Agent & other_agent = * others_agents[o];
-
-                    agent.velocity += other_agent.position - agent.position;
-                }
-
-                agent.velocity *= -1.0f;
-
-                normalize(agent.velocity);
-
-                agent.finalDisplacement = agent.velocity * agent.speed;
+                agent.alignment += other_agent.velocity;
             }
-        }
 
-        if(!it_collides)
+            normalize(agent.alignment);
+        }
+    }
+
+    for(int i=0; i<agents.size(); ++i)
+    {
+        Agent & agent = * agents[i];
+
+        others_agents.resize(0);
+
+        if(agent.getCollidingAgents(others_agents))
         {
-            break;
+            for(int o=0; o<others_agents.size(); ++o)
+            {
+                Agent & other_agent = * others_agents[o];
+
+                agent.separation += other_agent.position - agent.position;
+            }
+
+            agent.separation *= -1.0f;
+
+            normalize(agent.separation);
         }
     }
 
