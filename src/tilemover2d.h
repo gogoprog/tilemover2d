@@ -91,6 +91,7 @@ namespace tilemover2d
         void prepareForTargetIndex(const uint index);
         bool getCollidingAgents(AgentTable & others_table) const;
         bool collides() const;
+        bool getNeighborhood(AgentTable & others_table) const;
 
         Vector2
             position,
@@ -108,8 +109,6 @@ namespace tilemover2d
             currentDuration;
         uint
             currentTargetIndex;
-        char
-            tryIndex;
     };
 
     class World : public micropather::Graph

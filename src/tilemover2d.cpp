@@ -169,8 +169,6 @@ void Agent::update(const float dt)
 
             desiredDisplacement = velocity * dt;
             finalDisplacement = desiredDisplacement;
-
-            tryIndex = 0;
         }
         break;
 
@@ -236,6 +234,26 @@ bool Agent::getCollidingAgents(AgentTable & others_table) const
         if(this != & other_agent)
         {
             if(circleCircleIntersection(position + desiredDisplacement, radius, other_agent.position + other_agent.desiredDisplacement, other_agent.radius))
+            {
+                others_table.push_back(&other_agent);
+            }
+        }
+    }
+
+    return others_table.size() > 0;
+}
+
+bool Agent::getNeighborhood(AgentTable & others_table) const
+{
+    const AgentTable & agents = world->getAgents();
+
+    for(int a=0; a<agents.size(); ++a)
+    {
+        Agent & other_agent = * agents[a];
+
+        if(this != & other_agent)
+        {
+            if(getSquareDistance(position, other_agent.position) < 100.0f * 100.0f)
             {
                 others_table.push_back(&other_agent);
             }
@@ -372,8 +390,9 @@ void World::update(const float dt)
         agents[i]->update(dt);
     }
 
-    bool it_collides;
     AgentTable others_agents;
+
+    bool it_collides;
 
     for(int t=0; t<100; t++)
     {
@@ -389,33 +408,20 @@ void World::update(const float dt)
             {
                 it_collides = true;
 
-                switch(agent.tryIndex)
+                agent.velocity = agent.desiredDisplacement;
+
+                for(int o=0; o<others_agents.size(); ++o)
                 {
-                    case 0:
-                    {
-                        for(int o=0; o<others_agents.size(); ++o)
-                        {
-                            Agent & other_agent = * others_agents[o];
+                    Agent & other_agent = * others_agents[o];
 
-                            agent.velocity += other_agent.position - agent.position;
-                        }
-
-                        agent.velocity *= -1.0f;
-                    }
-                    break;
-
-                    case 1:
-                    {
-                        if(agent.desiredDisplacement != Vector2(0, 0))
-                        {
-                            agent.finalDisplacement = Vector2(0, 0);
-                        }
-                    }
-                    break;
+                    agent.velocity += other_agent.position - agent.position;
                 }
 
-                //agent.tryIndex++;
-                //agent.tryIndex %= 2;
+                agent.velocity *= -1.0f;
+
+                normalize(agent.velocity);
+
+                agent.finalDisplacement = agent.velocity * agent.speed;
             }
         }
 
