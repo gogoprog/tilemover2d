@@ -187,7 +187,7 @@ void Agent::postUpdate(const float dt)
         {
             const Vector2 & nextPosition = path.positions[currentTargetIndex];
 
-            velocity += alignment * 0.1f + separation * 1.0f;
+            velocity += alignment * 0.0f + separation * 0.0f;
 
             if(normalize(velocity))
             {
@@ -206,6 +206,7 @@ void Agent::postUpdate(const float dt)
                 {
                     state = State::IDLE;
                     velocity = Vector2(0, 0);
+                    desiredDisplacement = Vector2(0, 0);
                 }
             }
         }
