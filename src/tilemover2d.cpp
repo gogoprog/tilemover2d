@@ -3,6 +3,7 @@
 #include <cstdio>
 #include <algorithm>
 #include <cassert>
+#include <cmath>
 
 namespace tilemover2d
 {
